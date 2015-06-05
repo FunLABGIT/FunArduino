@@ -8,28 +8,38 @@ package Modèle;
 
 import Controleur.Controleur;
 import java.awt.Color;
-import saveSystem.AccesXML;
+import javax.swing.ImageIcon;
+import vue.BlocGraphique.ComposantGraphique;
+import vue.BlocGraphique.ComposantLedGraphique;
 
 /**
- *
- * @author Utilisateur
+ * Ce composant initialise une Led.
+ * @author tancfire
  */
 public class ComposantLed extends Composant {
     
-    public ComposantLed(SimulateurArduino simulateur, Controleur ctrl)
+    public ComposantLed(Controleur ctrl)
     {
-        super("led",simulateur, ctrl);
-        sesSlots.add(new Slot(TypePin.Digital, Color.YELLOW, simulateur));
+        super("led", ctrl);
+        sesSlots.add(new Slot(TypePin.Digital, Color.YELLOW, ctrl.getSimulateur()));
+        try{
         ctrl.getAcces().setSlot(id, TypePin.Digital.toString(), Color.YELLOW.toString().substring(14), sesSlots.get(1).getPinConnectee().getNom());
-        
-        ctrl.ajouterAuSetup(new BlocInitialisationComp(this, ctrl.getAcces()));
+        }catch(NullPointerException e)
+        {
+            this.delete();
+            return; //L'empêcher de continuer dans le programme
+        }
+        ctrl.ajouterAuSetup(new BlocInitialisationComp(this, ctrl));
+        compGraph = new ComposantLedGraphique(this,ctrl.getSimulateur().getSimuGraph());
     }
     
         public ComposantLed(int id, Controleur ctrl)
     {
-        super(id, "led", ctrl.getSimulateur());
+        super(id, "led", ctrl);
         sesSlots.add(new Slot(TypePin.Digital, Color.YELLOW, ctrl.getSimulateur()));
-         ctrl.ajouterAuSetup(new BlocInitialisationComp(id, this, ctrl.getAcces()));
+        
+        ctrl.ajouterAuSetup(new BlocInitialisationComp(id, this, ctrl));
+        compGraph = new ComposantLedGraphique(this,ctrl.getSimulateur().getSimuGraph());
     }
 
     @Override

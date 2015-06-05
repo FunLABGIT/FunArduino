@@ -23,6 +23,7 @@ import com.sun.org.apache.xml.internal.serialize.XMLSerializer;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.w3c.dom.Document;
@@ -40,23 +41,26 @@ import org.w3c.dom.NodeList;
 public class AccesXML {
       private Document saSave;
       private String chemin;
+      private DocumentBuilderFactory factory;
      
-     /**
-      * @param cheminDuFichier le chemin du fichier de sauvegarde
-      */
-      public AccesXML(String cheminDuFichier){
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+
+      public AccesXML(){
+        this.factory = DocumentBuilderFactory.newInstance(); 
+    }
+      
+      public void setChemin(String cheminDuFichier)
+      {
         try{
         DocumentBuilder leDoc = factory.newDocumentBuilder();
-        chemin = cheminDuFichier;
+        this.chemin = cheminDuFichier;
         saSave = leDoc.parse(chemin);
         }catch(Exception e)
         {
             System.err.println("erreur d'accès XML: "+e.getMessage());
-        }  
-    }
+        } 
+      }
       
-      
+           
       /*========================================================================
       --------------- CREATION DES ELEMENTS DANS LE FICHIER --------------------
       ========================================================================*/
@@ -64,11 +68,11 @@ public class AccesXML {
       
       public void creerBloc(int id, String label)
      { 
-           if(!blocExiste(id)){ //si le bloc n'existe pas
-         Element e = saSave.createElement("bloc");
-         e.setAttribute("id", Integer.toString(id));
-         e.setAttribute("label", label);
-         saSave.getDocumentElement().appendChild(e);
+         if(!blocExiste(id)){ //si le bloc n'existe pas
+            Element e = saSave.createElement("bloc");
+            e.setAttribute("id", Integer.toString(id));
+            e.setAttribute("label", label);
+            saSave.getDocumentElement().appendChild(e);
          }
      }
      
@@ -168,7 +172,7 @@ public class AccesXML {
      {
          if(blocExiste(id)){ //si le bloc existe
              Element bloc = getBlocById(id); //On récupère le bloc
-             bloc.setAttribute("position", String.valueOf(position)); //On lui donne sa position
+             bloc.setAttribute("position", Integer.toString(position)); //On lui donne sa position
          }else{
              System.err.println("xml: impossible de définir une position pour le bloc "+id+", car il est inexistant.");
          }
@@ -381,7 +385,7 @@ public class AccesXML {
                     }
             }}
         }
-         BlocInitVariable bloc = new BlocInitVariable(id, var, this);
+         BlocInitVariable bloc = new BlocInitVariable(id, var, ctrl);
          
          return bloc;
      }
@@ -406,6 +410,26 @@ public class AccesXML {
         }
          return desVariables;
      }
+     
+     
+          public void supprimerVariable(int id)
+     {
+         NodeList lesNoeuds = saSave.getElementsByTagName("variable");
+         if(lesNoeuds != null){
+            for(int i=0; i<lesNoeuds.getLength();i++)
+            {
+                if(lesNoeuds.item(i) instanceof Element){
+                    Element e3 = (Element)lesNoeuds.item(i);
+                    if(e3.getAttribute("id").equals(Integer.toString(id)))
+                    {
+                        e3.getParentNode().removeChild(e3); //On supprime le composant du fichier
+                    }else{
+                        System.err.println("Variable n°"+id+" non trouvé dans la sauvegarde !");
+                    }
+                }
+            }
+         }
+     }
          
         
      
@@ -428,46 +452,98 @@ public class AccesXML {
          return desComposants;
      }
      
+     
+     
+     public void supprimerComposant(int id)
+     {
+         NodeList lesNoeuds = saSave.getElementsByTagName("composant");
+         if(lesNoeuds != null){
+            for(int i=0; i<lesNoeuds.getLength();i++)
+            {
+                if(lesNoeuds.item(i) instanceof Element){
+                    Element e3 = (Element)lesNoeuds.item(i);
+                    if(e3.getAttribute("id").equals(Integer.toString(id)))
+                    {
+                        e3.getParentNode().removeChild(e3); //On supprime le composant du fichier
+                    }else{
+                        System.err.println("Composant n°"+id+" non trouvé dans la sauvegarde !");
+                    }
+                }
+            }
+         }
+     }
+     
+     
+     public HashMap<Integer,Bloc> recupererFilsBlocsById(int id, Controleur ctrl)
+     {
+         return  recupererFilsBlocs("id", Integer.toString(id), ctrl);
+     }
+     
+     
+     public HashMap<Integer,Bloc> recupererFilsBlocsByLabel(String label, Controleur ctrl)
+     {
+         return  recupererFilsBlocs("label", label, ctrl);
+     }
         
            
      
-     public ArrayList<Bloc> recupererFilsBlocs(String labelBloc, Controleur ctrl)
+     private HashMap<Integer,Bloc> recupererFilsBlocs(String attribut, String valeur, Controleur ctrl)
      {
-         ArrayList<Bloc> desBlocs = new ArrayList<Bloc>();
+         HashMap<Integer,Bloc> desBlocs = new HashMap<Integer,Bloc>();
          
-         NodeList lesNoeuds = saSave.getDocumentElement().getChildNodes(); //On récupère tout les éléments racines
+         NodeList lesNoeuds = saSave.getElementsByTagName("bloc"); //On récupère tout les éléments blocs
          if(lesNoeuds != null){
             for(int i=0; i<lesNoeuds.getLength();i++)
             {
                 if(lesNoeuds.item(i) instanceof Element){
                 Element e3 = (Element)lesNoeuds.item(i);
                 
-                if(e3.getTagName().equals("bloc")){ // On s'assure que c'est un bloc (on a récupérer la liste de tout les éléments racines)
-                        if(e3.getAttribute("label").equals(labelBloc)){ //On sélectionne le bon bloc en fonction du label (à change pour ID)
+                        if(e3.getAttribute(attribut).equals(valeur)){ //On vérifie que l'élément correspond aux critères recherchés
                             NodeList lesNoeuds2 = e3.getChildNodes(); //On sélectionne tout les fils du bloc sélectionné
                             
                             for(int i2=0; i2<lesNoeuds2.getLength();i2++)
                             {
                                if(lesNoeuds2.item(i2) instanceof Element){
                                 Element e = (Element)lesNoeuds2.item(i2);
-                                if(e.getTagName().equals("bloc")){ //On vérifie que c'est un bloc
-                                Bloc bloc = convertirBloc(e, ctrl); //On récupère le bloc
+                                if(e.getTagName().equals("bloc")){ //On vérifie que l'élément récupéré un bloc
+                                Bloc bloc = convertirBloc(e, ctrl); //On récupère le bloc fils
                                         if(bloc!=null){ //si il n'est pas nul (il est reconnu)
-                                            desBlocs.add(bloc); // on l'ajoute
+                                            System.out.println("charge du bloc:"+Integer.parseInt(e.getAttribute("position"))+": "+bloc.getClass().getSimpleName());
+                                            desBlocs.put(Integer.parseInt(e.getAttribute("position")),bloc); // on l'ajoute
                                         }
                                }
                                }
                             }
                         }
                 }
-                }
             }
         }
          return desBlocs;
      }
      
+     
+     
+     public void supprimerBloc(int id)
+     {
+         NodeList lesNoeuds = saSave.getElementsByTagName("bloc");
+         if(lesNoeuds != null){
+            for(int i=0; i<lesNoeuds.getLength();i++)
+            {
+                if(lesNoeuds.item(i) instanceof Element){
+                    Element e3 = (Element)lesNoeuds.item(i);
+                    if(e3.getAttribute("id").equals(Integer.toString(id)))
+                    {
+                        e3.getParentNode().removeChild(e3); //On supprime le composant du fichier
+                    }else{
+                        System.err.println("Bloc n°"+id+" non trouvé dans la sauvegarde !");
+                    }
+                }
+            }
+         }
+     }
+     
     
-     // /!\ OPTIMISATION A EFFECTUER
+     // /!\ OPTIMISATIONS et CORRECTIONS A EFFECTUER
         private Bloc convertirBloc(Element e, Controleur ctrl)
         {
            int id = Integer.parseInt(e.getAttribute("id"));
@@ -476,8 +552,7 @@ public class AccesXML {
            
            if(e.getAttribute("label").equals("BlocAttendre")){
                 Element param = getParamByNom(id, "delai");
-                bloc = new BlocAttendre(id,Integer.parseInt(param.getAttribute("valeur")),this);
-            
+                bloc = new BlocAttendre(id,Integer.parseInt(param.getAttribute("valeur")), ctrl);
            }else if (e.getAttribute("label").equals("BlocAllumerPin")){
                  EtatPin etat = EtatPin.BAS;
                  Element param = getParamByNom(id, "etatPin");
@@ -487,7 +562,7 @@ public class AccesXML {
                     {
                         etat = EtatPin.HAUT;
                     }
-                 bloc = new BlocAllumerPin(id, ctrl.getComposantById(id2),  etat, this);
+                 bloc = new BlocAllumerPin(id, ctrl.getComposantById(id2),  etat, ctrl); //Problème: si le composant est supprimé
                  
            }else if (e.getAttribute("label").equals("BlocConditions")){
                  Element param1 = getParamByNom(id, "param1");
@@ -517,7 +592,7 @@ public class AccesXML {
                      o2 = ctrl.getComposantById(Integer.parseInt(param2.getAttribute("valeur")));
                  }
                  
-                 bloc = new BlocConditions(id, o1, o2, Comparateur.superieur, this);
+                 bloc = new BlocConditions(id, o1, o2, Comparateur.superieur, ctrl);
            }
            
            

@@ -6,28 +6,38 @@
 
 package Modèle;
 
+import Controleur.Controleur;
 import java.awt.Color;
-import saveSystem.AccesXML;
+import vue.BlocGraphique.BlocSortiSerieGraphique;
 
 /**
- *
- * @author Utilisateur
+ * Permet d'afficher du texte sur le port série.
+ * @author tancfire
  */
 public class BlocSortiSerie extends Bloc{
     String message;
     
-    public BlocSortiSerie(String message, AccesXML acces)
+    public BlocSortiSerie(String message, Controleur ctrl)
     {
-        super(Color.RED, acces);
-        this.message = message;
+        super(TypeBloc.programmation, Color.RED, new BlocSortiSerieGraphique(), ctrl);
+        initialisation(message);
+        init();
     }
     
-        public BlocSortiSerie(int id, String message, AccesXML acces)
+    public BlocSortiSerie(int id, String message, Controleur ctrl)
     {
-        super(id, Color.RED, acces);
-        this.message = message;
+        super(id, TypeBloc.programmation, Color.RED, new BlocSortiSerieGraphique(), ctrl);
+        initialisation(message);
+        init();
     }
 
+    
+    private void initialisation(String message)
+    {
+        this.message = message;
+    }
+        
+        
     @Override
     public void mettreAjourCode() {
        sonCodeDebut = tab()+"Serial.println(\""+message+"\");\n";

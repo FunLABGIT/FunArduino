@@ -7,17 +7,20 @@
 package Modèle;
 
 /**
- *
- * @author Utilisateur
+ * Le comparateur est utilisé dans le bloc de condition. Il permet de comparer
+ * deux valeurs.
+ * @author tancfire
  */
 public enum Comparateur {
-    egal("=="), inegal("!="), superieur(">"), inferieur("<"), superieurOuEgal(">="), inferieurOuEgal("<=");
+    egal("==", "égal à"), inegal("!=", "non-égal à"), superieur(">", "supérieur à"), inferieur("<", "inférieur à"), superieurOuEgal(">=", "supérieur ou égal à"), inferieurOuEgal("<=", "inférieur ou égal à");
     
     private final String signe;
+    private final String formule;
     
-    Comparateur(String signe)
+    Comparateur(String signe, String formule)
     {
         this.signe = signe;
+        this.formule = formule;
     }
     
     @Override
@@ -25,4 +28,10 @@ public enum Comparateur {
     {
         return signe;
     }
+
+    public String getFormule() {
+        return formule;
+    }
+    
+    
 }

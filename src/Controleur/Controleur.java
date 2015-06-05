@@ -10,11 +10,9 @@ import Modèle.AssemblageBlocs;
 import Modèle.Bloc;
 import Modèle.BlocAllumerPin;
 import Modèle.BlocAttendre;
-import Modèle.BlocChangerVariable;
 import Modèle.BlocConditions;
 import Modèle.BlocInit;
-import Modèle.BlocInitVariable;
-import Modèle.BlocSortiSerie;
+import Modèle.BlocLibrairies;
 import Modèle.BlocStart;
 import Modèle.BlocUpdate;
 import Modèle.Comparateur;
@@ -22,19 +20,19 @@ import Modèle.Composant;
 import Modèle.ComposantLed;
 import Modèle.EtatPin;
 import Modèle.SimulateurArduino;
+import Modèle.TypeBloc;
 import Modèle.TypeVariable;
 import Modèle.Variable;
+import java.awt.Color;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import javax.xml.parsers.DocumentBuilderFactory;
 import saveSystem.AccesXML;
 import vue.KitArduinoFrame;
 
@@ -54,28 +52,29 @@ public class Controleur {
     AssemblageBlocs assemblage;
     SimulateurArduino simulateur;
     
+    BlocLibrairies blocLibrairies;
     BlocInit blocInit;
     BlocStart blocStart;
     BlocUpdate blocUpdate;
     
+    private final DocumentBuilderFactory factory;
     
     public Controleur(KitArduinoFrame vue)
     {
         this.vue = vue;
-        composants = new ArrayList<Composant>();
-        variables = new ArrayList<Variable>();
+        composants = new ArrayList<>();
+        variables = new ArrayList<>();
+        factory = DocumentBuilderFactory.newInstance();
         
-        // ------- test --------
-        vue.ajouterBlocGraphique();
-        // ---------------------
+        acces = new AccesXML();
         
-        creerProjet(new File("./saves").getAbsolutePath(), "GenerateByFunArduino");
+        creerProjet(new File("saves").getAbsolutePath(), "GenerateByFunArduino");
        
         
         //On initialise tout à zéro
         remettreAZero();
         
-        ComposantLed led = new ComposantLed(simulateur,this);
+        ComposantLed led = new ComposantLed(this);
         ajouterComposant(led);
         
         Variable varEtat = new Variable(TypeVariable.nombreEntier, "etat", "0", this);
@@ -83,17 +82,18 @@ public class Controleur {
         
         //============================== ZONE DE TEST ============================== //
         
-       // BlocConditions conditions = new BlocConditions((Object)varEtat,(Object)0,Comparateur.egal);
+        BlocConditions conditions = new BlocConditions((Object)varEtat,(Object)42,Comparateur.egal,this);
       //  BlocConditions conditions2 = new BlocConditions((Object)varEtat,(Object)1,Comparateur.egal);
         
-        blocUpdate.ajouterBlocALaFin(new BlocAllumerPin(led, EtatPin.HAUT,acces));
-        blocUpdate.ajouterBlocALaFin(new BlocAttendre(500,acces));
-        blocUpdate.ajouterBlocALaFin(new BlocAllumerPin(led, EtatPin.BAS,acces));
-        blocUpdate.ajouterBlocALaFin(new BlocAttendre(500,acces));
+        blocUpdate.ajouterBlocALaFin(new BlocAllumerPin(led, EtatPin.HAUT,this));
+        blocUpdate.ajouterBlocALaFin(conditions);
+        blocUpdate.ajouterBlocALaFin(new BlocAttendre(500,this));
+        blocUpdate.ajouterBlocALaFin(new BlocAllumerPin(led, EtatPin.BAS,this));
+        blocUpdate.ajouterBlocALaFin(new BlocAttendre(500,this));
         
-         blocUpdate.ajouterBlocALaFin(new BlocConditions((Object)varEtat,(Object)5, Comparateur.egal, acces));
+       // blocUpdate.ajouterBlocALaFin(new BlocConditions((Object)varEtat,(Object)5, Comparateur.egal, this));
         
-      //  conditions.ajouterBloc(0, new BlocAllumerPin(led, EtatPin.HAUT));
+        conditions.ajouterBlocALaFin( new BlocAllumerPin(led, EtatPin.HAUT,this));
       //  conditions.ajouterBloc(1, new BlocChangerVariable(varEtat, "1"));
      //   conditions2.ajouterBloc(0, new BlocAllumerPin(led, EtatPin.BAS));
     //    conditions2.ajouterBloc(1, new BlocChangerVariable(varEtat, "0"));
@@ -106,30 +106,74 @@ public class Controleur {
     public void mettreAjourCode()
     {
         vue.setCode(assemblage.getCode());
+        vue.mettreAJourBlocsGraphiques(assemblage.getBlocsGraphiques());
     }
     
-    
+    /**
+     * Cette méthode permet de (re)mettre à zéro tout ce qui est nécessaire.
+     */
     public void remettreAZero()
     {  
-       simulateur = new SimulateurArduino();
+       if(this.simulateur!=null)
+       vue.supprimerSimulateur(this.simulateur.getSimuGraph());
+       
+       //On supprime toutes les variables
+       for(int i=0; i<variables.size();i++)
+       {
+           supprimerVariable(variables.get(i));
+       }
+       
+       //On supprime tout les composants
+       for(int i=0; i<composants.size();i++)
+       {
+           supprimerComposant(composants.get(i));
+       }
+       this.simulateur = new SimulateurArduino(this);
+       vue.ajouterSimulateur(this.simulateur.getSimuGraph());
+       
         assemblage = new AssemblageBlocs(acces);
-        blocStart = new BlocStart(acces);
-        blocUpdate = new BlocUpdate(acces);
-        blocInit = new BlocInit(acces);
+        blocLibrairies = new BlocLibrairies(this);
+        blocStart = new BlocStart(this);
+        blocUpdate = new BlocUpdate(this);
+        blocInit = new BlocInit(this);
         
-        assemblage.ajouterBloc(0, blocInit);
-        assemblage.ajouterBloc(1, blocStart);
-        assemblage.ajouterBloc(2, blocUpdate);
+        assemblage.ajouterBloc(0, blocLibrairies);
+        assemblage.ajouterBloc(1, blocInit);
+        assemblage.ajouterBloc(2, blocStart);
+        assemblage.ajouterBloc(3, blocUpdate);
         
         mettreAjourCode();
     }
       
     
-
+    public void ouvrirMenuModifier(Bloc blocCaller, int x, int y)
+    {
+        vue.ouvrirMenuModifier(blocCaller,x,y);
+    }
     
+    
+    public void ouvrirChoixBlocsAAjouter(Bloc blocCaller)
+    {
+        vue.ouvrirChoixBlocsAAjouter(blocCaller);
+    }
+
+    public void mettreAJourBranchements()
+    {
+        vue.mettreAJourBranchements(composants);
+    }
+    
+    
+    public void ajouterBloc(Bloc blocParent, Bloc blocFils)
+    {
+        blocParent.ajouterBlocALaFin(blocFils);
+        mettreAjourCode();
+    }
+    
+     
     public void ajouterVariable(Variable variable)
     {
         variables.add(variable);
+        mettreAjourCode();
     }
         
     
@@ -137,7 +181,20 @@ public class Controleur {
     public void ajouterComposant(Composant composant)
     {
         composants.add(composant);
+        if(composant.getCompGraph()!=null)
+        vue.ajouterComposantGraphique(composant.getCompGraph());
+        mettreAjourCode();
     }
+    
+    
+    public void supprimerComposant(Composant composant)
+    {
+        composants.remove(composant);
+        if(composant.getCompGraph()!=null)
+        vue.supprimerComposantGraphique(composant.getCompGraph());
+        mettreAjourCode();
+    }
+    
     
     
     
@@ -182,7 +239,7 @@ public class Controleur {
     
     
     
-            /*===================================================================
+        /*===================================================================
         ---------------- SAUVEGARDES ET GESTION DE FICHIERS -----------------
         ===================================================================*/
         
@@ -202,7 +259,7 @@ public class Controleur {
         //On change le nom et le chemin à la fin
         this.nomProjet = nouveauNomProjet;
         this.chemin = nouveauChemin;
-        acces = new AccesXML(chemin+"/"+nomProjet+"/project.fun");
+        acces.setChemin(chemin+"/"+nomProjet+"/project.fun");
     }
     
     
@@ -233,7 +290,7 @@ public class Controleur {
         }
       
         //On initialise la classe d'accès sur le fichier qui vient d'être créé.
-        acces = new AccesXML(chemin+"/"+nomProjet+"/project.fun"); //--> saves/GenerateByArduino/GenerateByArduino.fun
+        acces.setChemin(chemin+"/"+nomProjet+"/project.fun"); //--> saves/GenerateByArduino/GenerateByArduino.fun
     }
         
        
@@ -251,7 +308,7 @@ public class Controleur {
             out.close();
           
        //Compilation et Téléversement à partir de l'IDE Arduino
-            Process p1 = Runtime.getRuntime().exec("C:\\Program Files (x86)\\Arduino\\arduino --board arduino:avr:"+arduino+" --port COM16 --upload "+chemin+nomProjet+"\\"+nomProjet+".ino");
+            Process p1 = Runtime.getRuntime().exec("C:\\Program Files (x86)\\Arduino\\arduino --board arduino:avr:"+arduino+" --port COM12 --upload "+chemin+"\\"+nomProjet+"\\"+nomProjet+".ino");
             
             p1.waitFor();
             int v = p1.exitValue();
@@ -279,28 +336,57 @@ public class Controleur {
             //on change le nom du projet et le chemin
             this.nomProjet = nomProjet;
             this.chemin = chemin;
-            acces = new AccesXML(chemin+"/"+nomProjet+"/project.fun");
+            acces.setChemin(chemin+"/"+nomProjet+"/project.fun");
             
             
             //charger le fichier .xml (.fun)
-            acces.recupererVariables(this);
-            acces.recupererComposants(this);
             
-            ArrayList<Bloc> blocs2 = acces.recupererFilsBlocs("BlocStart",this);
-            for(int i=0; i<blocs2.size(); i++)
+            //Avant de charger les blocs, on charge les variables et les composants,
+            //car certains blocs dépendantes de ces derniers.
+            
+            //On ajoute les variables
+            ArrayList<Variable> vars = acces.recupererVariables(this);
+            for(int i=0; i<vars.size();i++)
             {
-                this.ajouterAuSetupSansSauvegarde(blocs2.get(i));
-                System.out.println("ajout d'un bloc: "+blocs2.get(i).getClass().getSimpleName()+"( id: "+blocs2.get(i).getId()+")");
-
+                ajouterVariable(vars.get(i));
+            }
+            
+            //On ajoute les composants
+            ArrayList<Composant> comps = acces.recupererComposants(this);
+            for(int i=0; i<comps.size();i++)
+            {
+                ajouterComposant(comps.get(i));
+            }
+            
+            //On récupère tout les blocs à ajouter au BlocStart
+            HashMap<Integer,Bloc> blocs2 = acces.recupererFilsBlocsByLabel("BlocStart",this);
+            for(Map.Entry<Integer,Bloc> unBloc : blocs2.entrySet()) 
+            {
+                this.ajouterAuSetupSansSauvegarde(unBloc.getValue());
+                recupererFils(unBloc.getValue());
             } 
              
-            ArrayList<Bloc> blocs = acces.recupererFilsBlocs("BlocUpdate",this);
-            for(int i=0; i<blocs.size(); i++)
+            //On récupère tout les blocs à ajouter au BlocUpdate
+            HashMap<Integer,Bloc> blocs = acces.recupererFilsBlocsByLabel("BlocUpdate",this);
+            for(Map.Entry<Integer,Bloc> unBloc : blocs.entrySet()) 
             {
-                 this.ajouterAuLoopSansSauvegarde(blocs.get(i));
-                System.out.println("ajout d'un bloc: "+blocs.get(i).getClass().getSimpleName()+"( id: "+blocs.get(i).getId()+")");
-
-            }   mettreAjourCode();
+                 this.ajouterAuLoopSansSauvegarde(unBloc.getValue());
+                 recupererFils(unBloc.getValue());
+            }   
+            mettreAjourCode();
+    }
+    
+    
+    
+    private void recupererFils(Bloc bloc)
+    {
+        HashMap<Integer,Bloc> blocs = acces.recupererFilsBlocsById(bloc.getId(),this);
+            for(Map.Entry<Integer,Bloc> unBloc : blocs.entrySet()) 
+            {
+                bloc.ajouterBlocSansSauvegarder(unBloc.getKey(), unBloc.getValue());
+                recupererFils(unBloc.getValue()); //On récupère les fils du fils si y'en a
+                System.out.println(bloc.getClass().getSimpleName()+": "+bloc.getPosition());
+            }
     }
         
     
@@ -342,6 +428,12 @@ public class Controleur {
         return nomProjet;
     }
 
+    public AssemblageBlocs getAssemblage() {
+        return assemblage;
+    }
+    
+    
+
     
     
         /*===================================================================
@@ -370,13 +462,18 @@ public class Controleur {
         
           for(int i=0; i<composants.size();i++) 
           {
-              if(composants.get(id).getId()==id)
-                  comp = composants.get(id);
+              if(composants.get(i).getId()==id)
+                  comp = composants.get(i);
           }
           
         return comp;
     }
     
+    
+    public ArrayList<Variable> getVariables()
+    {
+        return variables;
+    }
     
         public Variable getVariableById(int id)
     {
@@ -384,11 +481,15 @@ public class Controleur {
         
           for(int i=0; i<variables.size();i++) 
           {
-              if(variables.get(id).getId()==id)
-                  var = variables.get(id);
+              if(variables.get(i).getId()==id)
+                  var = variables.get(i);
           }
           
         return var;
+    }
+
+    public void supprimerVariable(Variable var) {
+        variables.remove(var);
     }
         
 }

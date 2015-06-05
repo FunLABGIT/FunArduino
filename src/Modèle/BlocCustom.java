@@ -6,23 +6,31 @@
 
 package Modèle;
 
+import Controleur.Controleur;
 import java.awt.Color;
-import saveSystem.AccesXML;
+import vue.BlocGraphique.BlocCustomGraphique;
 
 /**
- * Ce bloc permet de taper son propre code.
+ * Ce bloc permet de créer son propre code.
  * @author tancfire
  */
 public class BlocCustom extends Bloc{
     String code;
 
-    public BlocCustom(String code, AccesXML acces) {
-        super(Color.PINK, acces);
-        this.code = code;
+    public BlocCustom(String code, Controleur ctrl) {
+        super(TypeBloc.programmation, Color.PINK, new BlocCustomGraphique(), ctrl);
+        initialisation(code);
+        init();
     }
     
-        public BlocCustom(int id, String code, AccesXML acces) {
-        super(id, Color.PINK, acces);
+        public BlocCustom(int id, String code, Controleur ctrl) {
+        super(id, TypeBloc.programmation, Color.PINK, new BlocCustomGraphique(), ctrl);
+        initialisation(code);
+        init();
+    }
+        
+    private void initialisation(String code)
+    {
         this.code = code;
     }
 

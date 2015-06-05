@@ -6,33 +6,44 @@
 
 package Modèle;
 
+import Controleur.Controleur;
 import java.awt.Color;
-import saveSystem.AccesXML;
+import vue.BlocGraphique.BlocInitVariableGraphique;
 
 /**
- *
- * @author Utilisateur
+ * Permet d'initialiser une variable dans le code.
+ * @author tancfire
  */
-public class BlocInitVariable extends Bloc{
+public class BlocInitVariable extends BlocVariable{
 
-    private Variable var;
     
-    public BlocInitVariable(Variable var, AccesXML acces) {
-        super(Color.YELLOW, acces);
-        this.var = var;
+    public BlocInitVariable(Variable var, Controleur ctrl) {
+        super(TypeBloc.initialisation, new Color(255,242,0), new BlocInitVariableGraphique(), var, ctrl);
+        init();
     }
     
-        public BlocInitVariable(int id, Variable var, AccesXML acces) {
-        super(id, Color.YELLOW, acces);
-        this.var = var;
+    public BlocInitVariable(int id, Variable var, Controleur ctrl) {
+        super(id, TypeBloc.initialisation, new Color(255,242,0),  new BlocInitVariableGraphique(), var, ctrl);
+        init();
+    }
         
+           
+    @Override
+    public void mettreAjourCode() {
+        if(getVariable().getTypeVariable()== TypeVariable.texte){
+        sonCodeDebut = tab()+getVariable().getTypeVariable().getType()+" "+getVariable().getNom()+"=\""+ getVariable().getValeurDepart() + "\";\n";
+        }else{
+        sonCodeDebut = tab()+getVariable().getTypeVariable().getType()+" "+getVariable().getNom()+"="+ getVariable().getValeurDepart() + ";\n";
+        }
+        acces.setParametre(id, "int", "idVariable", String.valueOf(getVariable().getId()));
     }
 
     
     @Override
-    public void mettreAjourCode() {
-        sonCodeDebut = tab()+var.getTypeParam().getType()+" "+var.getNom()+"="+ var.getValeurDepart() + ";\n";
-        acces.setParametre(id, "int", "idVariable", String.valueOf(var.getId()));
+    public void delete()
+    {
+        super.delete();
+        getVariable().delete();
     }
     
 }

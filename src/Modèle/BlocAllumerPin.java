@@ -6,32 +6,38 @@
 
 package Modèle;
 
+import Controleur.Controleur;
 import java.awt.Color;
-import saveSystem.AccesXML;
+import vue.BlocGraphique.BlocAllumerPinGraphique;
 
 /**
- *
- * @author Utilisateur
+ * Ce bloc permet d'allumer une Pin d'un composant.
+ * @author tancfire
  */
 public class BlocAllumerPin extends BlocComposant {
     private EtatPin etatPin;
     
-    public BlocAllumerPin(Composant composant, EtatPin etatPin, AccesXML acces)
+    public BlocAllumerPin(Composant composant, EtatPin etatPin, Controleur ctrl)
     {
-        super(Color.BLUE, composant, acces);
-        this.etatPin = etatPin;
-        
-        mettreAjourCode();
+        super(TypeBloc.programmation, Color.BLUE, new BlocAllumerPinGraphique(), composant, ctrl);
+        initialisation(etatPin);
+        init();
     }
     
     
-    public BlocAllumerPin(int id, Composant composant, EtatPin etatPin, AccesXML acces)
+    public BlocAllumerPin(int id, Composant composant, EtatPin etatPin, Controleur ctrl)
     {
-        super(id, Color.BLUE, composant, acces);
-        this.etatPin = etatPin;
-        
-        mettreAjourCode();
+        super(id, TypeBloc.programmation, Color.BLUE, new BlocAllumerPinGraphique(), composant, ctrl);
+        initialisation(etatPin);
+        init();
     }
+    
+    
+    private void initialisation(EtatPin etat)
+    {
+        this.etatPin = etat;
+    }
+    
     
     @Override
     public void mettreAjourCode()
@@ -43,6 +49,17 @@ public class BlocAllumerPin extends BlocComposant {
             sonCodeDebut = tab()+"digitalWrite("+composant.getPin().getNom()+",HIGH);\n";
         }
         acces.setParametre(id, "etatPin", "etatPin", etatPin.toString());
+        super.mettreAjourCode();
+    }
+
+    
+    public String getEtatPin() {
+         if(etatPin == EtatPin.BAS)
+        {
+            return "Eteindre";
+        }else{
+            return "Allumer";
+        }
     }
 
     
