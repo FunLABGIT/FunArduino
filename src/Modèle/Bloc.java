@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import saveSystem.AccesXML;
-import vue.BlocGraphique.BlocGraphique;
+import vue.Graphique.BlocGraphique;
 
 /**
  * Le bloc est un bloc de code.
@@ -39,10 +39,10 @@ public abstract class Bloc {
     /**
      * C'est le constructeur qui permet de créer un Bloc et de le sauvegarder dans
      * l'accès XML.
-     * @param typeBloc
+     * @param typeBloc Le type de bloc du bloc
      * @param couleur La couleur qui apparaitra dans le texte
-     * @param blocGraph
-     * @param ctrl 
+     * @param blocGraph Le bloc graphique associé à ce bloc
+     * @param ctrl Le controleur
      */
     public Bloc(TypeBloc typeBloc, Color couleur, BlocGraphique blocGraph, Controleur ctrl)
     {
@@ -53,11 +53,11 @@ public abstract class Bloc {
     
      /**
      * C'est le constructeur qui permet de créer un Bloc à partir du fichier de sauvegarde.
-     * @param id
-     * @param typeBloc
-     * @param couleur
-     * @param blocGraph
-     * @param ctrl 
+     * @param id L'identifiant du bloc (récupéré dans le fichier xml)
+     * @param typeBloc le type de bloc du bloc
+     * @param couleur La couleur qui apparaitra dans le texte
+     * @param blocGraph le bloc graphique associé à ce bloc
+     * @param ctrl le controleur
      */
         public Bloc(int id, TypeBloc typeBloc, Color couleur, BlocGraphique blocGraph, Controleur ctrl)
     {
@@ -67,6 +67,8 @@ public abstract class Bloc {
         sonCodeFin = "";
         niveau = 0; // c'est le nombre de tabulation qu'il faudra faire.
         this.id = id;
+        if(id>nbID)
+            nbID = id;
         this.ctrl = ctrl;
         this.blocParent = null;
         this.arborecence = false;
@@ -77,7 +79,10 @@ public abstract class Bloc {
         this.acces = ctrl.getAcces();
     }
         
-        
+        /**
+         * Permet d'initialiser le bloc correctement (Voir dans les blocs enfants
+         * pour savoir où l'appeler).
+         */
         protected void init()
         {
             blocGraph.setBloc(this);
@@ -189,8 +194,8 @@ public abstract class Bloc {
      * est appelé à chaque fois que nous avons besoin de mettre à jour le code du bloc.
      */
     public abstract void mettreAjourCode();
-
     
+     
     /**
      * Permet de récupérer le code arduino généré par le bloc.
      * @return Le code arduino généré par le bloc.

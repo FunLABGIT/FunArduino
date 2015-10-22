@@ -9,7 +9,7 @@ package Modèle;
 import Controleur.Controleur;
 import java.awt.Color;
 import java.util.ArrayList;
-import vue.BlocGraphique.ComposantGraphique;
+import vue.Graphique.ComposantGraphique;
 
 /**
  * Le Composant est tout le matériel que l'on pourra brancher sur le kit.
@@ -23,24 +23,33 @@ public abstract class Composant {
     protected ComposantGraphique compGraph;
     private Controleur ctrl;
     
-    public Composant(String nom, Controleur ctrl)
+    public Composant(String nom, ComposantGraphique compGraph, Controleur ctrl)
     {
-        this(nbID,nom, ctrl);
+        this(nbID,nom,compGraph, ctrl);
         nbID++;
         
         ctrl.getAcces().creerComposant(id, nom);
     }
     
     
-        public Composant(int id, String nom, Controleur ctrl) //Lorsque le composant est chargé à partir du xml
+        public Composant(int id, String nom, ComposantGraphique compGraph, Controleur ctrl) //Lorsque le composant est chargé à partir du xml
     {
         sesSlots = new ArrayList<Slot>();
         sesSlots.add(new Slot(TypePin.GND, Color.BLACK, ctrl.getSimulateur())); // on ajoute la masse
         this.nom = nom;
         this.id = id;
+        this.compGraph = compGraph;
+        
+        if(id>nbID)
+            nbID = id;
         this.ctrl = ctrl;
     }
     
+    public void init()
+    {
+        compGraph.setComposant(this);
+    }
+        
     
     public abstract Pin getPin();
     
@@ -73,6 +82,11 @@ public abstract class Composant {
     public void changerSlot(int x, int y) {
         sesSlots.get(1).changerPin(x, y);
         ctrl.mettreAJourBranchements();
+    }
+
+    public void mettreAJourBlocsGraphiques()
+    {
+        ctrl.mettreAJourBlocsGraphiques();
     }
 
     

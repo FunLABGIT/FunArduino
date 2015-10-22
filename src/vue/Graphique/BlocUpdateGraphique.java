@@ -4,28 +4,29 @@
  * and open the template in the editor.
  */
 
-package vue.BlocGraphique;
+package vue.Graphique;
 
+import Modèle.BlocUpdate;
 import javax.swing.ImageIcon;
 
 /**
  *
  * @author tancfire
  */
-public class BlocSortiSerieGraphique extends BlocGraphique{
+public class BlocUpdateGraphique extends BlocGraphique {
 
-    public BlocSortiSerieGraphique() {
-        super(new ImageIcon("src/images/BlocInit.png"));
+    public BlocUpdateGraphique() {
+        super(new ImageIcon("src/images/BlocUpdate.png"));
     }
 
     @Override
     protected String getTexte1() {
-        return "code";
+        return "Tout le temps";
     }
 
     @Override
     protected String getTexte2() {
-        return "personnalisé";
+        return "";
     }
     
 }

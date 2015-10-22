@@ -8,7 +8,7 @@ package Modèle;
 
 import Controleur.Controleur;
 import java.awt.Color;
-import vue.BlocGraphique.BlocConditionsGraphique;
+import vue.Graphique.BlocConditionsGraphique;
 
 /**
  * Permet d'ajouter des conditions (ex: si a>b).
@@ -49,7 +49,6 @@ public class BlocConditions extends Bloc{
 
      
 
-
     @Override
     public void mettreAjourCode(){
         TraductionParametre trad1 = new TraductionParametre(objet1);
@@ -70,6 +69,11 @@ public class BlocConditions extends Bloc{
                 break;
             case "variable":
                 acces.setParametre(id, "variable", "param1", String.valueOf(((Variable)objet1).getId()));
+                if(ctrl.getVariableById(((Variable)objet1).getId())==null) //On vérifie que la variable existe
+                    delete(); //si elle ne l'ai pas, on détruit ce bloc
+                break;
+            case "string":
+                 acces.setParametre(id, "string", "param2", objet1.toString());
                 break;
         }
         switch (trad2.getType()) {
@@ -81,6 +85,8 @@ public class BlocConditions extends Bloc{
                 break;
             case "variable":
                 acces.setParametre(id, "variable", "param2", String.valueOf(((Variable)objet2).getId()));
+                 if(ctrl.getVariableById(((Variable)objet2).getId())==null) //On vérifie que la variable existe
+                    delete(); //si elle ne l'ai pas, on détruit ce bloc
                 break;
             case "string":
                  acces.setParametre(id, "string", "param2", objet2.toString());
@@ -91,6 +97,21 @@ public class BlocConditions extends Bloc{
         }
         
     }
+    
+    public void setParam1(Object objet1) //en fait, ici, on ne définit pas le paramètre, mais l'objet
+    {
+        this.objet1 = objet1;
+    }
+    
+    public void setParam2(Object objet2)
+    {
+        this.objet2 = objet2;
+    }
+
+    public void setComparateur(Comparateur comparateur) {
+        this.comparateur = comparateur;
+    }
+    
 
     public Object getParam1() {
         return param1;

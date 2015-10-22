@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-package vue.BlocGraphique;
+package vue.Graphique;
 
 import Modèle.ComposantLed;
 import Modèle.SimulateurArduino;
@@ -16,8 +16,8 @@ import javax.swing.ImageIcon;
  */
 public class ComposantLedGraphique extends ComposantGraphique{
 
-    public ComposantLedGraphique(ComposantLed comp, SimulateurGraphique simulateur) {
-        super(comp, new ImageIcon("src/images/ComposantLed.png"), simulateur);
+    public ComposantLedGraphique(SimulateurGraphique simulateur) {
+        super(new ImageIcon("src/images/ComposantLed.png"), simulateur);
     }
     
 }
